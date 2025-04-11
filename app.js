@@ -8,13 +8,14 @@ const schedule = require('node-schedule');
 
 const app = express();
 
-// 設置 LINE bot 配置
+// LINE bot 配置
 const client = new Client({
   channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN,
   channelSecret: process.env.CHANNEL_SECRET
 });
 
-app.use(bodyParser.json()); // 解析 JSON 請求
+// 使用 body-parser 解析 JSON 請求
+app.use(bodyParser.json());
 
 // 根路徑處理（測試用）
 app.get('/', (req, res) => {
@@ -24,10 +25,10 @@ app.get('/', (req, res) => {
 // 設置 /webhook 路由，處理來自 LINE 的事件
 app.post('/webhook', (req, res) => {
   const events = req.body.events;
-  
-  // 將事件傳遞給 handleEvent 處理
+
+  // 處理事件
   Promise.all(events.map(handleEvent))
-    .then(() => res.status(200).send('OK')) // 回應 200 表示成功
+    .then(() => res.status(200).send('OK'))  // 回應 200 表示成功
     .catch((err) => {
       console.error(err);
       res.status(500).end();  // 如果有錯誤，回應 500
