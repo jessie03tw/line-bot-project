@@ -8,25 +8,24 @@ const schedule = require('node-schedule');
 
 const app = express();
 
-// LINE bot 配置
+// 設置 LINE bot 配置
 const client = new Client({
   channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN,
   channelSecret: process.env.CHANNEL_SECRET
 });
 
-// 使用 body-parser 解析 JSON 請求
-app.use(bodyParser.json());
+app.use(bodyParser.json()); // 解析 JSON 請求
 
-// 根路徑處理（測試用）
-app.get('/', (req, res) => {
-  res.send('Hello, world!');  // 測試 GET 請求是否能正常工作
+// 測試路由，檢查抓取的新聞
+app.get('/test-news', async (req, res) => {
+  const news = await fetchNews();
+  console.log(news);  // 在終端打印抓取的新聞
+  res.json(news);     // 返回 JSON 給前端
 });
 
-// 設置 /webhook 路由，處理來自 LINE 的事件
+// 設置 /webhook 路由來處理來自 LINE 的事件
 app.post('/webhook', (req, res) => {
   const events = req.body.events;
-
-  // 處理事件
   Promise.all(events.map(handleEvent))
     .then(() => res.status(200).send('OK'))  // 回應 200 表示成功
     .catch((err) => {
@@ -44,7 +43,7 @@ async function handleEvent(event) {
     if (userMessage === '1') {
       const news = await fetchNews();
       if (news.length > 0) {
-        const latestNews = news[0]; // 最新的新聞
+        const latestNews = news[0];  // 最新的新聞
         const replyMessage = {
           type: 'text',
           text: `最新的新聞是：\n${latestNews.title}\n閱讀更多: ${latestNews.link}`
@@ -63,23 +62,29 @@ async function handleEvent(event) {
     const echo = { type: 'text', text: event.message.text };
     return client.replyMessage(event.replyToken, echo);
   }
-  return Promise.resolve(null);  // 如果不是文字訊息，就不處理
+  return Promise.resolve(null);  // 如果不是文字訊息，什麼都不做
 }
 
 // 用來抓取網頁新聞的函數
 async function fetchNews() {
   const url = 'https://natalie.mu/music/news';  // 抓取音樂新聞頁面
-  const response = await axios.get(url);
-  const $ = cheerio.load(response.data);
-  
-  let newsList = [];
-  $('a.news-title').each((index, element) => {
-    const title = $(element).text();  // 獲取標題
-    const link = $(element).attr('href');  // 獲取鏈接
-    newsList.push({ title, link });
-  });
+  try {
+    const response = await axios.get(url);
+    const $ = cheerio.load(response.data);
+    
+    let newsList = [];
+    $('a.news-title').each((index, element) => {
+      const title = $(element).text();  // 獲取標題
+      const link = $(element).attr('href');  // 獲取鏈接
+      newsList.push({ title, link });
+    });
 
-  return newsList;
+    console.log(newsList);  // 在終端打印抓取的新聞列表，這樣可以幫助我們排查問題
+    return newsList;
+  } catch (error) {
+    console.error('抓取新聞失敗:', error);
+    return [];  // 如果抓取新聞出錯，返回空陣列
+  }
 }
 
 // 用來發送 LINE 訊息的函數
