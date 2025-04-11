@@ -1,4 +1,3 @@
-// 引入所需的模塊
 require('dotenv').config();  // 加載環境變數
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -15,26 +14,34 @@ const client = new Client({
   channelSecret: process.env.CHANNEL_SECRET
 });
 
-app.use(bodyParser.json()); // 解析 JSON 請求
+// 使用 body-parser 解析 JSON 請求
+app.use(bodyParser.json());
 
-// 設置 /webhook 路由，接收來自 LINE 的事件
+// 根路徑處理（測試用）
+app.get('/', (req, res) => {
+  res.send('Hello, world!');  // 測試 GET 請求是否能正常工作
+});
+
+// 設置 /webhook 路由，處理來自 LINE 的事件
 app.post('/webhook', (req, res) => {
   const events = req.body.events;
+  
+  // 將事件傳遞給 handleEvent 處理
   Promise.all(events.map(handleEvent))
-    .then(() => res.status(200).send('OK'))
+    .then(() => res.status(200).send('OK')) // 回應 200 表示成功
     .catch((err) => {
       console.error(err);
-      res.status(500).end();
+      res.status(500).end();  // 如果有錯誤，回應 500
     });
 });
 
 // 處理 LINE 事件的函數
 function handleEvent(event) {
   if (event.type === 'message' && event.message.type === 'text') {
-    const echo = { type: 'text', text: event.message.text };
+    const echo = { type: 'text', text: event.message.text }; // 回應收到的訊息
     return client.replyMessage(event.replyToken, echo);
   }
-  return Promise.resolve(null);
+  return Promise.resolve(null);  // 如果不是 text 訊息，就不做處理
 }
 
 // 用來抓取網頁新聞的函數
@@ -44,7 +51,6 @@ async function fetchNews() {
   const $ = cheerio.load(response.data);
   
   let newsList = [];
-  // 提取所有新聞標題和鏈接
   $('a.news-title').each((index, element) => {
     const title = $(element).text();  // 獲取標題
     const link = $(element).attr('href');  // 獲取鏈接
@@ -66,7 +72,7 @@ async function sendNewsToLine(news, language = 'en') {
     message.text = `今日のニュース：\n${news.title}\nもっと読む: ${news.link}`;
   }
 
-  const userId = 'YOUR_LINE_USER_ID';  // 請替換成你的 LINE 用戶 ID
+  const userId = 'YOUR_LINE_USER_ID';  // 替換成你的 LINE 用戶 ID
   await client.pushMessage(userId, message);
 }
 
