@@ -14,8 +14,7 @@ const client = new Client({
   channelSecret: process.env.CHANNEL_SECRET
 });
 
-// 使用 body-parser 解析 JSON 請求
-app.use(bodyParser.json());
+app.use(bodyParser.json()); // 解析 JSON 請求
 
 // 根路徑處理（測試用）
 app.get('/', (req, res) => {
@@ -36,12 +35,34 @@ app.post('/webhook', (req, res) => {
 });
 
 // 處理 LINE 事件的函數
-function handleEvent(event) {
+async function handleEvent(event) {
   if (event.type === 'message' && event.message.type === 'text') {
-    const echo = { type: 'text', text: event.message.text }; // 回應收到的訊息
+    const userMessage = event.message.text;
+
+    // 當收到用戶發送的 "1"，抓取最新的新聞
+    if (userMessage === '1') {
+      const news = await fetchNews();
+      if (news.length > 0) {
+        const latestNews = news[0]; // 最新的新聞
+        const replyMessage = {
+          type: 'text',
+          text: `最新的新聞是：\n${latestNews.title}\n閱讀更多: ${latestNews.link}`
+        };
+        return client.replyMessage(event.replyToken, replyMessage);
+      } else {
+        const replyMessage = {
+          type: 'text',
+          text: '抱歉，無法抓取最新的新聞。'
+        };
+        return client.replyMessage(event.replyToken, replyMessage);
+      }
+    }
+
+    // 如果收到其他消息，回應相同的文字
+    const echo = { type: 'text', text: event.message.text };
     return client.replyMessage(event.replyToken, echo);
   }
-  return Promise.resolve(null);  // 如果不是 text 訊息，就不做處理
+  return Promise.resolve(null);  // 如果不是文字訊息，就不處理
 }
 
 // 用來抓取網頁新聞的函數
