@@ -1,0 +1,38 @@
+lemon@MacBookPro line-bot % Server is running on port 3000
+
+zsh: command not found: Server
+lemon@MacBookPro line-bot % 
+// 引入 Express 库
+const express = require('express');
+const app = express();
+
+// 設定伺服器的根路徑（/）處理器，會返回 "Hello, World!" 字串
+app.get('/', (req, res) => {
+  res.send('Hello, World!');
+});
+
+// 設定伺服器監聽的端口
+const port = process.env.PORT || 3000;
+
+// 啟動伺服器，並在終端顯示運行的端口
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});
+// 引入 express 模組
+const express = require('express');
+const app = express();
+
+// 設定一個簡單的路由，當你訪問首頁時會回覆這行文字
+app.get('/', (req, res) => {
+  res.send('Hello from LINE bot service!');
+});
+
+// 取得 Render 指定的 port，若沒有則使用 3000
+const PORT = process.env.PORT || 3000;
+
+// 啟動伺服器，並監聽指定的 port
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
+console.log("Hello, world!");
+
